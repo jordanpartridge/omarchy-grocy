@@ -15,10 +15,12 @@ QtObject {
     ]
     for (var i = 0; i < rows.length; i++) {
       if (rows[i][0] !== rows[i][1]) {
+        console.log("search-exit-bad " + rows[i][2])
         Qt.exit(10 + i)
         return
       }
     }
+    console.log("search-exit-ok")
     Qt.exit(0)
   }
 }

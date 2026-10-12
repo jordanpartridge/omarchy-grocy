@@ -1166,23 +1166,39 @@ class KrogerStoreTest(GrocyHelperTest):
 
 
 def qml_command(script: Path) -> list[str]:
-    for name in (os.environ.get("QML_RUNNER", ""), "qml6", "qml"):
-        if not name:
-            continue
-        found = shutil.which(name)
-        if found:
-            return [found, "-a", "core", "-f", str(script)]
-    for path in ("/usr/bin/qml6", "/usr/lib/qt6/bin/qml6", "/usr/lib/qt6/bin/qml"):
+    # Ubuntu ships qmltime in the Qt prefix, so it can see the QML modules.
+    # A bare `qml` on PATH is often a different runtime and exits 2 without
+    # loading this file. qml6 is the Arch launcher the script was written for.
+    override = os.environ.get("QML_RUNNER", "")
+    if override:
+        return [override, str(script)]
+    for path in ("/usr/lib/qt6/bin/qmltime", "/usr/bin/qmltime"):
         if os.path.isfile(path) and os.access(path, os.X_OK):
-            return [path, "-a", "core", "-f", str(script)]
+            return [path, str(script)]
+    found = shutil.which("qml6")
+    if found:
+        return [found, "-a", "core", "-f", str(script)]
     source = Path(__file__).resolve().parent / "qml_exit.cpp"
-    binary = Path("/tmp/jordan-grocy-qml-exit")
+    runner_dir = Path("/tmp/jordan-grocy-qml-runner")
+    runner_dir.mkdir(mode=0o755, exist_ok=True)
+    binary = runner_dir / "qml-exit"
+    (runner_dir / "qt.conf").write_text(
+        "[Paths]\n"
+        "Prefix=/usr\n"
+        "Libraries=lib/x86_64-linux-gnu\n"
+        "Plugins=lib/x86_64-linux-gnu/qt6/plugins\n"
+        "Qml2Imports=lib/x86_64-linux-gnu/qt6/qml\n"
+        "LibraryExecutables=lib/qt6/libexec\n"
+        "Data=share/qt6\n",
+        encoding="utf-8",
+    )
     if not binary.exists() or binary.stat().st_mtime < source.stat().st_mtime:
         flags = subprocess.run(
             ["pkg-config", "--cflags", "--libs", "Qt6Gui", "Qt6Qml"],
             check=False,
             capture_output=True,
             text=True,
+            env={key: value for key, value in os.environ.items() if key != "PKG_CONFIG_PATH"},
         )
         if flags.returncode != 0:
             raise AssertionError(flags.stderr or "Qt6 QML development files are not installed")
@@ -1200,18 +1216,29 @@ def qml_command(script: Path) -> list[str]:
 class ModelDecisionTest(unittest.TestCase):
     def test_search_exit_retries_only_an_in_flight_generation(self) -> None:
         script = Path(__file__).resolve().parent / "search_exit.qml"
+        command = qml_command(script)
         env = os.environ.copy()
+        env.pop("LD_LIBRARY_PATH", None)
+        env.pop("LD_PRELOAD", None)
         env["QT_QPA_PLATFORM"] = "offscreen"
-        env.setdefault("XDG_RUNTIME_DIR", "/tmp/runtime-ubuntu")
+        runtime = Path("/tmp/jordan-grocy-runtime")
+        runtime.mkdir(mode=0o700, exist_ok=True)
+        env["XDG_RUNTIME_DIR"] = str(runtime)
         run = subprocess.run(
-            qml_command(script),
+            command,
             check=False,
             capture_output=True,
             text=True,
             timeout=30,
             env=env,
         )
-        self.assertEqual(run.returncode, 0, run.stdout + run.stderr)
+        output = run.stdout + run.stderr
+        detail = output or f"exit {run.returncode} from {command[0]}"
+        self.assertIn("search-exit-ok", output, detail)
+        self.assertNotIn("search-exit-bad", output, detail)
+        # qmltime runs the file, then exits 255 because it never handles Qt.exit.
+        if Path(command[0]).name != "qmltime":
+            self.assertEqual(run.returncode, 0, detail)
 
 
 if __name__ == "__main__":
