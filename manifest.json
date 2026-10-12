@@ -1,0 +1,28 @@
+{
+  "schemaVersion": 1,
+  "id": "jordan.grocy",
+  "name": "Food Appears",
+  "version": "0.4.0",
+  "author": "Jordan Partridge",
+  "license": "MIT",
+  "description": "Grocy stock and the next Monday shopping list, with optional Kroger store search.",
+  "kinds": [
+    "bar-widget"
+  ],
+  "entryPoints": {
+    "barWidget": "BarWidget.qml"
+  },
+  "barWidget": {
+    "displayName": "Food Appears",
+    "description": "Stock on hand and the next Monday order. Optional Kroger prices when configured.",
+    "category": "Info",
+    "aliases": [
+      "food appears",
+      "grocy",
+      "stock",
+      "shopping"
+    ],
+    "allowMultiple": false,
+    "defaultSection": "right"
+  }
+}

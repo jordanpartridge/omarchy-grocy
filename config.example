@@ -1,0 +1,22 @@
+# Copy this file to ~/.config/jordan-grocy/config.env and run: chmod 600 ~/.config/jordan-grocy/config.env
+# The helper refuses the file unless it is a regular file owned by you, mode 600, and not a symlink.
+
+# https URL of your Grocy server. Use a hostname, not a raw IP.
+# No username, password, path, query, or fragment. A port is optional.
+GROCY_URL=https://grocy.example
+
+# Grocy → Settings → Manage API keys. Sent only as a GROCY-API-KEY header.
+GROCY_API_KEY=
+
+# IANA timezone used to name the next Monday's shopping list (Order YYYY-Www).
+GROCY_TIMEZONE=UTC
+
+# Optional Kroger banner search. Leave these unset to keep stock and the shopping list only.
+# Create an app at https://developer.kroger.com/ and request the product.compact scope.
+# KROGER_CLIENT_ID=
+# KROGER_CLIENT_SECRET=
+# Eight-digit Kroger location id for the store you shop.
+# KROGER_LOCATION_ID=
+# Banner code sent as filter.chain. Examples: FRYS, KINGSOOPERS, SMITHS, RALPHS.
+# When this line is omitted, the helper uses FRYS.
+# KROGER_CHAIN=FRYS
