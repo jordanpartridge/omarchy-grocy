@@ -1076,7 +1076,7 @@ Panel {
             spacing: Style.space(8)
 
             Text {
-              text: price !== "" ? ("$" + price) : "—"
+              text: price !== "" ? ("$" + price) : "no price"
               textFormat: Text.PlainText
               color: dim
               font.family: root.fontFamily
